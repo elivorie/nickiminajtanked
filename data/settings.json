@@ -1,0 +1,32 @@
+{
+  "1459761870679576629": {
+    "mod_log_channel_id": 0,
+    "delete_log_channel_id": 0,
+    "edit_log_channel_id": 0,
+    "join_leave_log_channel_id": 0,
+    "boost_log_channel_id": 0,
+    "welcome_channel_id": 0,
+    "booster_role_id": 0,
+    "member_role_id": 0,
+    "jail_role_id": 0,
+    "anti_link_enabled": false,
+    "anti_spam_enabled": false,
+    "anti_invite_enabled": false,
+    "welcome_enabled": false,
+    "goodbye_enabled": false,
+    "boost_message_enabled": false,
+    "welcome_message": "Welcome to **{server}**, {mention} \u2661",
+    "goodbye_message": "**{user}** left **{server}**",
+    "boost_message": "Thank you for boosting **{server}**, {mention} \u2661",
+    "boost_embed_title": "thank you for boosting",
+    "boost_embed_footer": "",
+    "boost_embed_image": "",
+    "boost_embed_thumbnail_mode": "avatar",
+    "booster_lastfm_custom_enabled": false,
+    "booster_lastfm_title": "now playing",
+    "booster_lastfm_footer": "",
+    "booster_lastfm_image": "",
+    "booster_lastfm_thumbnail_mode": "album",
+    "embed_color": 1118481
+  }
+}
