@@ -421,23 +421,12 @@ async def fetch_track_info(artist: str, track: str, username: str):
 
 
 def build_regular_lastfm_embed(guild_id: int, username: str, track: dict, user_info: dict | None = None, track_info: dict | None = None):
-    title = "now playing" if track["now_playing"] else "recent track"
+    title = "now playing ♡" if track["now_playing"] else "recent track ♡"
     embed = build_embed(title, guild_color(guild_id))
-    embed.description = (
-        f"**{track['name']}**\\n"
-        f"by **{track['artist']}**\\n"
-        f"from **{track['album']}**"
-    )
+    embed.description = f"**{track['name']}** — {track['artist']}"
 
-    scrobbles = track_info.get("userplaycount", "0") if track_info else "0"
     total_scrobbles = user_info.get("playcount", "0") if user_info else "0"
-
-    embed.add_field(name="account", value=username, inline=True)
-    embed.add_field(name="track scrobbles", value=scrobbles, inline=True)
-    embed.add_field(name="total scrobbles", value=total_scrobbles, inline=True)
-
-    if track["url"]:
-        embed.add_field(name="link", value=f"[open track]({track['url']})", inline=False)
+    embed.add_field(name="Scrobbles", value=f"{total_scrobbles} total plays", inline=False)
 
     thumb = ""
     if track_info and track_info.get("album_image"):
@@ -448,31 +437,23 @@ def build_regular_lastfm_embed(guild_id: int, username: str, track: dict, user_i
     if thumb:
         embed.set_thumbnail(url=thumb)
 
-    embed.set_footer(text="encore fm")
+    embed.set_footer(text="from last.fm")
     return embed
 
 
 def build_booster_lastfm_embed(member: discord.Member, username: str, track: dict, user_info: dict | None = None, track_info: dict | None = None):
     settings = get_guild_settings(member.guild.id)
-    title_template = settings.get("booster_lastfm_title", "now playing")
-    footer_template = settings.get("booster_lastfm_footer", "")
+    title_template = settings.get("booster_lastfm_title", "now playing ♡")
+    footer_template = settings.get("booster_lastfm_footer", "from last.fm")
     image_url = settings.get("booster_lastfm_image", "").strip()
     thumb_mode = settings.get("booster_lastfm_thumbnail_mode", "album")
 
     title = format_template(title_template, member=member, guild=member.guild)
     embed = build_embed(title, guild_color(member.guild.id))
-    embed.description = (
-        f"**[{track['name']}]({track['url']})**\\n"
-        f"by **{track['artist']}**\\n"
-        f"from **{track['album']}**"
-    )
+    embed.description = f"**{track['name']}** — {track['artist']}"
 
-    embed.add_field(name="last.fm", value=username, inline=True)
-    embed.add_field(name="member", value=member.mention, inline=True)
-    embed.add_field(name="track scrobbles", value=(track_info.get("userplaycount", "0") if track_info else "0"), inline=True)
-
-    if user_info:
-        embed.add_field(name="total scrobbles", value=user_info.get("playcount", "0"), inline=True)
+    total_scrobbles = user_info.get("playcount", "0") if user_info else "0"
+    embed.add_field(name="Scrobbles", value=f"{total_scrobbles} total plays", inline=False)
 
     if thumb_mode == "album":
         album_image = track_info.get("album_image", "") if track_info else ""
@@ -488,11 +469,7 @@ def build_booster_lastfm_embed(member: discord.Member, username: str, track: dic
     if image_url:
         embed.set_image(url=image_url)
 
-    if footer_template.strip():
-        embed.set_footer(text=format_template(footer_template, member=member, guild=member.guild))
-    else:
-        embed.set_footer(text=f"booster perk • {member.guild.name}")
-
+    embed.set_footer(text=format_template(footer_template, member=member, guild=member.guild) if footer_template.strip() else "from last.fm")
     return embed
 
 
@@ -1507,15 +1484,22 @@ async def fm(interaction: discord.Interaction, member: discord.Member | None = N
         await interaction.response.send_message(err, ephemeral=True)
         return
 
-    title = "Now Playing" if track["now_playing"] else "Most Recent Track"
-    embed = build_embed(f"{title} — {username}", guild_color(interaction.guild.id))
-    embed.add_field(name="Track", value=track["name"], inline=False)
-    embed.add_field(name="Artist", value=track["artist"], inline=False)
-    embed.add_field(name="Album", value=track["album"], inline=False)
-    if track["url"]:
-        embed.add_field(name="Link", value=track["url"], inline=False)
-    if track["image"]:
-        embed.set_thumbnail(url=track["image"])
+    user_info, _ = await fetch_user_info(username)
+    track_info, _ = await fetch_track_info(track["artist"], track["name"], username)
+
+    settings = get_guild_settings(interaction.guild.id)
+    booster_role_id = settings.get("booster_role_id", 0)
+    is_booster = (
+        settings.get("booster_lastfm_custom_enabled", False)
+        and booster_role_id
+        and any(role.id == booster_role_id for role in member.roles)
+    )
+
+    if is_booster:
+        embed = build_booster_lastfm_embed(member, username, track, user_info, track_info)
+    else:
+        embed = build_regular_lastfm_embed(interaction.guild.id, username, track, user_info, track_info)
+
     await interaction.response.send_message(embed=embed)
 
 
